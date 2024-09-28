@@ -24,7 +24,8 @@ You will need the following libraries and tools installed:
 You will need to create a folder named `model`, which contains two subfolders: `model/weights` and `model/checkpoints`.
 
 ### Dataset
-The dataset used in this project is sourced from the [ISIC 2024 Kaggle Challenge]([url](https://www.kaggle.com/competitions/isic-2024-challenge/data)). 
+The dataset used in this project is sourced from the [ISIC 2024 Kaggle Challenge](https://www.kaggle.com/competitions/isic-2024-challenge/data).
+
 
 Download the dataset from Kaggle and extract it into your project directory, for example:
 ![image](https://github.com/user-attachments/assets/179309f0-c543-467d-94b5-dd887cfddba1)
