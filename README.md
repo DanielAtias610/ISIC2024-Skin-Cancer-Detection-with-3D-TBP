@@ -39,6 +39,18 @@ The dataset contains:
 
 **Note:** The dataset is not included in this repository. You must download it from Kaggle and place it in the appropriate directories.
 
+### Configuring Paths
+Before running the scripts, make sure to update the following paths in the code:
+1. **`basic_path`**: This should be set to the path where the dataset (images and metadata) is located on your machine. Update it in the following scripts:
+    - `main.py`
+    - `main_test.py`
+    - `main_multimodal.py`
+    - `main_test_multimodal.py`
+      
+2. **`model_path`**: This should be set to the path where you want to store model weights and checkpoints. Update it in the following scripts:
+    - `main.py`
+    - `main_multimodal.py`
+
 ### Train the model:
 To train the model, run: `main.py`  
 This will train the model using the specified pre-trained architecture and save the best model weights to the `model/weights/` directory. The training process will handle class imbalance through data augmentation and undersampling.
