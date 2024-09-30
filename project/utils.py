@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from sklearn.metrics import roc_curve, auc
 import os
-from PIL import Image, ImageFilter  # For image manipulations and filtering
+from PIL import Image
 
 class ToTensor:
     """
@@ -61,31 +61,21 @@ def augment_malignant_images(basic_path, malignant_data, augmented_dir, num_augm
         tf.RandomHorizontalFlip(p=0.5),
         tf.RandomVerticalFlip(p=0.5),
         tf.RandomRotation(degrees=15),
-        tf.RandomAffine(degrees=0, translate=(0.02, 0.02), scale=(0.95, 1.05)), # slight translation
-        # transforms.Lambda(lambda img: elastic_transform(img)),  # Slight elastic deformation
-        # transforms.RandomResizedCrop(size=(256, 256), scale=(0.9, 1.0), ratio=(0.9, 1.1)),
-        # RandomGammaCorrection(),  # Mild gamma correction
-        # MildBlur(),  # Mild blur to add texture variability
-        # tf.Resize(size=(256, 256)),
-        # tf.ToTensor()
+        tf.RandomAffine(degrees=0, translate=(0.02, 0.02), scale=(0.95, 1.05)),  # slight translation
     ])
 
     for idx, row in malignant_data.iterrows():
         img_path = os.path.join(basic_path, r"\isic-2024-challenge\train-image\image", row['isic_id'] + ".jpg")
         image = Image.open(img_path).convert('RGB')
-        # print(f"Original image path: {img_path}")  # ADD THIS LINE TO CHECK ORIGINAL IMAGE LOADING
 
         # Apply augmentation
         for i in range(num_augmented_per_image):
             augmented_image = data_augmentation(image)
-            augmented_image = tf.ToPILImage()(augmented_image)
-            # Define the path to save the augmented image in the specified directory
 
+            # Define the path to save the augmented image in the specified directory
             save_path = os.path.join(augmented_dir, f"aug_{row['isic_id']}_{i}.jpg")
             augmented_image.save(os.path.join(augmented_dir, f"aug_{row['isic_id']}_{i}.jpg"))
             augmented_image.save(save_path)
-            # Verify each augmented image is saved properly
-            # print(f"Saved augmented image {i+1} for {row['isic_id']} at {save_path}")
 
     print(f"Augmentation completed. Images saved in {augmented_dir}.")
 
@@ -101,32 +91,6 @@ def calc_confusion_matrix(labels, predicted):
 def calc_f1_score(TP, FP, FN):
     f1 = (2 * TP) / ((2 * TP) + FP + FN)
     return f1
-
-
-# def partial_auc(y_true, y_scores, min_tpr=0.8):
-#     # my implementation
-#     # Calculate ROC curve
-#     fpr, tpr, thresholds = roc_curve(y_true, y_scores)
-#
-#     # Find the indices where TPR is above the specified threshold
-#     indices = np.where(tpr >= min_tpr)[0]
-#
-#     if len(indices) == 0:
-#         raise ValueError(f"No TPR values above {min_tpr * 100}% found.")
-#
-#     # Calculate the partial AUC using the trapezoidal rule
-#     total_auc = auc(fpr, tpr)
-#     filtered_tpr = tpr.copy()
-#     filtered_tpr[filtered_tpr >= min_tpr] = min_tpr
-#     filtered_auc = auc(fpr, filtered_tpr)
-#     p_auc = total_auc - filtered_auc
-#
-#     # from matplotlib import pyplot as plt
-#     # plt.figure()
-#     # plt.plot(fpr, tpr)
-#     # plt.plot(fpr, updated_tpr)
-#     # plt.show()
-#     return p_auc
 
 def partial_auc(ground_truth, prediction, min_tpr=0.8):
     # Check if all values in solution['target'] are 1 or 1
@@ -155,9 +119,4 @@ def partial_auc(ground_truth, prediction, min_tpr=0.8):
     tpr = np.append(tpr[:stop], np.interp(max_fpr, x_interp, y_interp))
     fpr = np.append(fpr[:stop], max_fpr)
     partial_auc = auc(fpr, tpr)
-    # from matplotlib import pyplot as plt
-    # plt.figure()
-    # plt.plot(fpr, tpr)
-    # plt.show()
-
     return partial_auc
