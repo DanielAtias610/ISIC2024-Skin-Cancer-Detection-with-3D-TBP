@@ -53,7 +53,9 @@ Before running the scripts, make sure to update the following paths in the code:
       
 2. **`model_path`**: This should be set to the path where you want to store model weights and checkpoints. Update it in the following scripts:
     - `main.py`
+    - `main_test.py`
     - `main_multimodal.py`
+    - `main_test_multimodal.py`
 
 ### Train the model:
 To train the model, run: `main.py`  
