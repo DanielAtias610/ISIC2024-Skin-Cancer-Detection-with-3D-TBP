@@ -2,9 +2,9 @@
 
 ## Project Overview
 
-This repository contains the code and methodologies for detecting skin cancer using 3D Total Body Photography (3D-TBP) images. The project is inspired by the ISIC 2024 Kaggle Challenge, focusing on identifying malignant lesions from 3D-TBP images. Our approach leverages deep learning models, data augmentation, and metadata integration to improve classification accuracy while minimizing computational demands.
+This repository contains the code and methodologies for detecting skin cancer using cropped 3D Total Body Photography (3D-TBP) images. The project is inspired by the ISIC 2024 Kaggle Challenge, focusing on identifying malignant lesions from cropped 3D-TBP images. Our approach leverages deep learning models, data augmentation, and metadata integration to improve classification accuracy while minimizing computational demands.
 ## Key Features
-- **Pre-trained Models**: ResNet, GoogLeNet, and MobileNetV2.
+- **Pre-trained Models**: ResNet50, GoogLeNet, and MobileNetV2.
 - **Handling Class Imbalance**: Uses data augmentation and undersampling techniques.
 - **Multimodal Approach**: Combines both image and metadata for enhanced classification.
 - **Partial AUC**: Evaluates model performance above an 80% true positive rate.
@@ -16,9 +16,12 @@ You will need the following libraries and tools installed:
 - PyTorch
 - torchvision
 - pandas
+- numpy
+- PIL
 - scikit-learn
 - matplotlib
 - tqdm
+- warnings
 
 ### Folder Structure
 You will need to create a folder named `model`, which contains two subfolders: `model/weights` and `model/checkpoints`.
@@ -90,7 +93,7 @@ This will evaluate the model on the test dataset and print metrics like accuracy
 - Trains the model for a specified number of epochs and saves the best weights based on validation accuracy.
  
 **main_test.py** - This script evaluates the trained model on the test dataset. It:  
-- Loads the test images and metadata.
+- Loads the test images.
 - Evaluates the model and calculates metrics like accuracy, F1-score, and partial AUC.
  
 **main_multimodal.py** - This script extends the training process to handle both image data and metadata. It:  
