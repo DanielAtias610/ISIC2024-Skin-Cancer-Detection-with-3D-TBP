@@ -1,4 +1,4 @@
-from dataset import SkinLesionDataset
+from dataset import SkinLesionDatasetMultiModal
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from matplotlib import pyplot as plt
@@ -6,9 +6,7 @@ from utils import *
 from torchvision import transforms
 from model import *
 import warnings
-
 warnings.filterwarnings('ignore')
-
 
 def main(basic_path, model_path):
     # Hyper Parameters
@@ -17,13 +15,14 @@ def main(basic_path, model_path):
     num_epochs = 20
     batch_size = 20
     learning_rate = 1e-4
+    feature_input_dim = 37
 
     # Create Dataset
     transform = transforms.Compose([ToTensor(), ImageResize(), transforms.CenterCrop(224),
                                     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-    train_dataset = SkinLesionDataset(basic_path, transform=transform, augment=True, num_augmented_per_image=3,
+    train_dataset = SkinLesionDatasetMultiModal(basic_path, transform=transform, augment=True, num_augmented_per_image=3,
                                       num_classes=2, benign_malignant_ratio=1)
-    val_dataset = SkinLesionDataset(basic_path, mode='validation', transform=transform, augment=False)
+    val_dataset = SkinLesionDatasetMultiModal(basic_path, mode='validation', transform=transform, augment=False)
 
     # Create DataLoaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
@@ -32,8 +31,9 @@ def main(basic_path, model_path):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"using {device} device")
 
-    model = ModifiedGoogLeNet(num_classes=2)
+    model = MultiModalModel(feature_input_dim, num_classes=num_classes)
     model.to(device)
+
     model.train()
 
     # Define loss and optimizer
@@ -56,11 +56,12 @@ def main(basic_path, model_path):
         epoch_predicted = []
         epoch_val_ground_truth = []
         epoch_val_predicted = []
-        for i, (images, labels) in enumerate(train_loader):
+        for i, (images, tabular_data, labels) in enumerate(train_loader):
             images = images.to(device)
+            tabular_data = tabular_data.to(device)
             labels = labels.to(device)
             # forward
-            outputs = model(images)
+            outputs = model(images, tabular_data)
             loss = criterion(outputs, labels)
             pbar.set_description(f"epoch: {epoch}, batch loss {loss.item():.3f}")
 
@@ -69,7 +70,7 @@ def main(basic_path, model_path):
             loss.backward()
             optimizer.step()
 
-            # calculate train accuracy
+            # calculate train metrics
             predicted = torch.argmax(outputs.data, 1)
             labels = torch.argmax(labels.data, 1)
             TP, TN, FP, FN = calc_confusion_matrix(labels, predicted)
@@ -77,11 +78,10 @@ def main(basic_path, model_path):
             TN_train += TN
             FP_train += FP
             FN_train += FN
-
             epoch_predicted = np.append(epoch_predicted, outputs.data[:, 1].unsqueeze(0).detach().numpy())
             epoch_ground_truth = np.append(epoch_ground_truth, labels.detach().numpy())
 
-        # calculate train metrics
+        # calculate train f1-score and pAUC
         train_accuracy = calc_f1_score(TP_train, FP_train, FN_train)
         accuracy_train_all_epochs += [train_accuracy]
         train_auc = partial_auc(epoch_ground_truth, epoch_predicted)
@@ -92,14 +92,15 @@ def main(basic_path, model_path):
         with torch.no_grad():
             TP_val = TN_val = FP_val = FN_val = 0
 
-            for images_val, labels_val in val_loader:
+            for images_val, tabular_data_val, labels_val in val_loader:
                 images_val = images_val.to(device)
+                tabular_data_val = tabular_data_val.to(device)
                 labels_val = labels_val.to(device)
                 # Forward pass
-                outputs = model(images_val)
+                outputs = model(images_val, tabular_data_val)
                 loss = criterion(outputs, labels_val)
 
-                # Calculate validation metrics
+                # Calculate validation accuracy
                 predicted_val = torch.argmax(outputs.data, 1)
                 labels_val = torch.argmax(labels_val.data, 1)
                 TP, TN, FP, FN = calc_confusion_matrix(labels_val, predicted_val)
@@ -110,7 +111,6 @@ def main(basic_path, model_path):
                 epoch_val_predicted = np.append(epoch_val_predicted, outputs.data[:, 1].unsqueeze(0).detach().numpy())
                 epoch_val_ground_truth = np.append(epoch_val_ground_truth, labels_val.detach().numpy())
 
-            # calculate f1-score for the epoch
             val_accuracy = calc_f1_score(TP_val, FP_val, FN_val)
             accuracy_val_all_epochs += [val_accuracy]
             val_auc = partial_auc(epoch_val_ground_truth, epoch_val_predicted)
